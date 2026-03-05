@@ -1,0 +1,22 @@
+# Binários
+*.exe
+*.dll
+*.so
+*.dylib
+bin/
+dist/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Go
+*.mod.sum
+vendor/
+.DS_Store
+
+# Arquivos de log
+*.log
