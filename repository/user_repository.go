@@ -1,9 +1,8 @@
 package repository
 
 import (
-	"api-controle-cadastro/db"
 	"api-controle-cadastro/model"
-	"database/sql" // Assuming this is the connection type; adjust if needed
+	"database/sql"
 	"fmt"
 )
 
@@ -28,85 +27,74 @@ func NewUserRepository(connection *sql.DB) UserRepository { // Now returns the i
 	}
 }
 
-func (pr *userRepository) GetUsers() ([]model.User, error) { // Updated receiver
-	mockUsers := db.GetAllUsers()
-	var userList []model.User
+func (pr *userRepository) GetUsers() ([]model.User, error) {
+	rows, err := pr.connection.Query("SELECT id, user_name, email FROM \"user\" ORDER BY id")
+	if err != nil {
+		return nil, fmt.Errorf("erro ao buscar usuários: %w", err)
+	}
+	defer rows.Close()
 
-	for _, u := range mockUsers {
-		userList = append(userList, model.User{
-			ID:    u.ID,
-			Name:  u.UserName,
-			Email: u.Email,
-		})
+	var userList []model.User
+	for rows.Next() {
+		var user model.User
+		err := rows.Scan(&user.ID, &user.Name, &user.Email)
+		if err != nil {
+			return nil, fmt.Errorf("erro ao escanear usuário: %w", err)
+		}
+		userList = append(userList, user)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("erro ao iterar sobre usuários: %w", err)
 	}
 
 	return userList, nil
 }
 
-func (pr *userRepository) CreateUser(user model.User) (int, error) { // Updated receiver
+func (pr *userRepository) CreateUser(user model.User) (int, error) {
 	var id int
-	query, err := pr.connection.Prepare("INSERT INTO user " +
-		"(user_name, email) VALUES ($1, $2) RETURNING id")
+	err := pr.connection.QueryRow(
+		"INSERT INTO \"user\" (user_name, email) VALUES ($1, $2) RETURNING id",
+		user.Name, user.Email,
+	).Scan(&id)
 
 	if err != nil {
-		fmt.Println(err)
-		return 0, err
+		return 0, fmt.Errorf("erro ao criar usuário: %w", err)
 	}
-
-	err = query.QueryRow(user.Name, user.Email).Scan(&id)
-	if err != nil {
-		fmt.Println(err)
-		return 0, err
-	}
-
-	query.Close()
 
 	return id, nil
 }
 
-func (pr *userRepository) GetUserById(id_user int) (*model.User, error) { // Updated receiver
-	mockUser := db.GetUserByID(id_user)
-	if mockUser == nil {
+func (pr *userRepository) GetUserById(id_user int) (*model.User, error) {
+	var user model.User
+	err := pr.connection.QueryRow(
+		"SELECT id, user_name, email FROM \"user\" WHERE id = $1",
+		id_user,
+	).Scan(&user.ID, &user.Name, &user.Email)
+
+	if err == sql.ErrNoRows {
 		return nil, nil
 	}
+	if err != nil {
+		return nil, fmt.Errorf("erro ao buscar usuário: %w", err)
+	}
 
-	return &model.User{
-		ID:    mockUser.ID,
-		Name:  mockUser.UserName,
-		Email: mockUser.Email,
-	}, nil
+	return &user, nil
 }
 
-func (pr *userRepository) DeleteUser(id_user int) error { // Updated receiver; properly implemented
-	query, err := pr.connection.Prepare("DELETE FROM user WHERE id = $1")
+func (pr *userRepository) DeleteUser(id_user int) error {
+	result, err := pr.connection.Exec("DELETE FROM \"user\" WHERE id = $1", id_user)
 	if err != nil {
-		fmt.Println(err)
-		return err
-	}
-	defer query.Close()
-
-	result, err := query.Exec(id_user)
-	if err != nil {
-		fmt.Println(err)
-		return err
+		return fmt.Errorf("erro ao deletar usuário: %w", err)
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		fmt.Println(err)
-		return err
+		return fmt.Errorf("erro ao verificar linhas afetadas: %w", err)
 	}
 
 	if rowsAffected == 0 {
 		return fmt.Errorf("usuário com ID %d não encontrado", id_user)
-	}
-
-	// Optional: Also remove from mock if using dual logic (comment out if not needed)
-	for i, u := range db.MockUsers {
-		if u.ID == id_user {
-			db.MockUsers = append(db.MockUsers[:i], db.MockUsers[i+1:]...)
-			break
-		}
 	}
 
 	return nil

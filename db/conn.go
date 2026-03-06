@@ -1,40 +1,74 @@
 package db
 
-type User struct {
-	ID       int
-	UserName string
-	Email    string
-}
+import (
+	"database/sql"
+	"fmt"
+	"os"
 
-var MockUsers = []User{
-	{ID: 1, UserName: "Diego Christmann", Email: "diego@gmail.com"},
-	{ID: 2, UserName: "Maria Santos", Email: "maria@example.com"},
-	{ID: 3, UserName: "Pedro Oliveira", Email: "pedro@example.com"},
-	{ID: 4, UserName: "Ana Costa", Email: "ana@example.com"},
-	{ID: 5, UserName: "Carlos Souza", Email: "carlos@example.com"},
-}
+	_ "github.com/lib/pq"
+)
 
-// GetAllUsers retorna todos os usuários mock
-func GetAllUsers() []User {
-	return MockUsers
-}
-
-// GetUserByID retorna um usuário específico pelo ID
-func GetUserByID(id int) *User {
-	for i := range MockUsers {
-		if MockUsers[i].ID == id {
-			return &MockUsers[i]
-		}
+func getEnv(key, defaultValue string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
 	}
-	return nil
+	return defaultValue
 }
 
-// GetUserByEmail retorna um usuário específico pelo email
-func GetUserByEmail(email string) *User {
-	for i := range MockUsers {
-		if MockUsers[i].Email == email {
-			return &MockUsers[i]
-		}
+// ConnectDB cria e retorna uma conexão com o banco de dados PostgreSQL
+func ConnectDB() (*sql.DB, error) {
+	// Usa variáveis de ambiente ou valores padrão
+	host := getEnv("DB_HOST", "localhost")
+	port := getEnv("DB_PORT", "5432")
+	user := getEnv("DB_USER", "postgres")
+	password := getEnv("DB_PASSWORD", "postgres")
+	dbname := getEnv("DB_NAME", "dadosTestes")
+	sslmode := getEnv("DB_SSLMODE", "disable")
+
+	psqlInfo := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
+		host, port, user, password, dbname, sslmode)
+
+	db, err := sql.Open("postgres", psqlInfo)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao abrir conexão: %w", err)
 	}
+
+	// Configurar pool de conexões
+	db.SetMaxOpenConns(25)
+	db.SetMaxIdleConns(5)
+
+	// Testar a conexão
+	err = db.Ping()
+	if err != nil {
+		return nil, fmt.Errorf("erro ao conectar ao banco de dados: %w", err)
+	}
+
+	fmt.Printf("Conectado ao banco de dados PostgreSQL: %s@%s:%s/%s\n", user, host, port, dbname)
+
+	// Criar tabela se não existir
+	err = Migrate(db)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao migrar banco de dados: %w", err)
+	}
+
+	return db, nil
+}
+
+// Migrate cria as tabelas necessárias no banco de dados
+func Migrate(db *sql.DB) error {
+	query := `
+		CREATE TABLE IF NOT EXISTS "user" (
+			id SERIAL PRIMARY KEY,
+			user_name VARCHAR(255) NOT NULL,
+			email VARCHAR(255) NOT NULL UNIQUE
+		)
+	`
+
+	_, err := db.Exec(query)
+	if err != nil {
+		return fmt.Errorf("erro ao criar tabela user: %w", err)
+	}
+
+	fmt.Println("Tabela 'user' verificada/criada com sucesso")
 	return nil
 }
