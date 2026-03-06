@@ -39,7 +39,11 @@ func main() {
 
 	server.GET("/user/:userId", usersController.GetUserById)
 
+	server.GET("/user/email/:email", usersController.GetUserByEmail)
+
 	server.DELETE("/user/:userId", usersController.DeleteUser)
+
+	server.PUT("/user/:userId", usersController.UpdateUser)
 
 	server.Run(":8000")
 }

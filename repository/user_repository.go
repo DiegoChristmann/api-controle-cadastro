@@ -10,13 +10,20 @@ type userRepository struct { // Renamed from UserRepository to avoid conflict wi
 	connection *sql.DB
 }
 
+// GetUserByEmail implements [UserRepository].
+func (pr *userRepository) GetUserByEmail(email string) (*model.User, error) {
+	panic("unimplemented")
+}
+
 // ...existing code...
 
 type UserRepository interface { // Keep this as the interface
 	GetUsers() ([]model.User, error)
 	CreateUser(user model.User) (int, error)
 	GetUserById(id_user int) (*model.User, error)
+	GetUserByEmail(email string) (*model.User, error)
 	DeleteUser(id_user int) error
+	UpdateUser(id_user int) error
 }
 
 // ...existing code...
@@ -100,4 +107,20 @@ func (pr *userRepository) DeleteUser(id_user int) error {
 	return nil
 }
 
-// Remove any old misplaced code (e.g., the query.Exec and for loop that were after GetUserById)
+func (pr *userRepository) UpdateUser(id_user int) error {
+	result, err := pr.connection.Exec("UPDATE \"user\" SET user_name = $1, email = $2 WHERE id = $3", id_user)
+	if err != nil {
+		return fmt.Errorf("erro ao atualizar usuário: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("erro ao verificar linhas afetadas: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return fmt.Errorf("usuário com ID %d não encontrado", id_user)
+	}
+
+	return nil
+}

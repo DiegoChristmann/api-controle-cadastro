@@ -44,3 +44,7 @@ func (pu *UserUsecase) GetUserById(id_user int) (*model.User, error) {
 func (pu *UserUsecase) DeleteUser(id_user int) error {
 	return pu.repository.DeleteUser(id_user)
 }
+
+func (pu *UserUsecase) UpdateUser(id_user int) error {
+	return pu.repository.UpdateUser(id_user)
+}
