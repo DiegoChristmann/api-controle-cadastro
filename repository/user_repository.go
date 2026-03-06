@@ -10,11 +10,6 @@ type userRepository struct { // Renamed from UserRepository to avoid conflict wi
 	connection *sql.DB
 }
 
-// GetUserByEmail implements [UserRepository].
-func (pr *userRepository) GetUserByEmail(email string) (*model.User, error) {
-	panic("unimplemented")
-}
-
 // ...existing code...
 
 type UserRepository interface { // Keep this as the interface
@@ -77,6 +72,23 @@ func (pr *userRepository) GetUserById(id_user int) (*model.User, error) {
 	err := pr.connection.QueryRow(
 		"SELECT id, user_name, email FROM \"user\" WHERE id = $1",
 		id_user,
+	).Scan(&user.ID, &user.Name, &user.Email)
+
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("erro ao buscar usuário: %w", err)
+	}
+
+	return &user, nil
+}
+
+func (pr *userRepository) GetUserByEmail(email string) (*model.User, error) {
+	var user model.User
+	err := pr.connection.QueryRow(
+		"SELECT id, user_name, email FROM \"user\" WHERE email = '$1'",
+		email,
 	).Scan(&user.ID, &user.Name, &user.Email)
 
 	if err == sql.ErrNoRows {

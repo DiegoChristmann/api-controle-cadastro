@@ -25,7 +25,7 @@ func main() {
 	// Camada de usecase
 	usersUsecase := usecase.NewUserUsecase(userRepository)
 	// Camada de controllers
-	usersController := controller.NewUserController(usersUsecase)
+	usersController := controller.NewUserController(&usersUsecase)
 
 	server.GET("/ping", func(ctx *gin.Context) {
 		ctx.JSON(200, gin.H{

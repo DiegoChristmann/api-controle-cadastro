@@ -11,10 +11,10 @@ import (
 )
 
 type UserController struct {
-	userUsecase usecase.UserUsecase
+	userUsecase *usecase.UserUsecase
 }
 
-func NewUserController(usecase usecase.UserUsecase) *UserController {
+func NewUserController(usecase *usecase.UserUsecase) *UserController {
 	return &UserController{
 		userUsecase: usecase,
 	}
@@ -94,6 +94,36 @@ func (u *UserController) GetUserById(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, user)
 }
 
+func (u *UserController) GetUserByEmail(ctx *gin.Context) {
+
+	id := ctx.Param("userEmail")
+	if id == "" {
+		response := model.Response{
+			Message: "Email do usuário nao pode ser nula",
+		}
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	// Como estamos buscando pelo email, não precisamos converter para inteiro
+	email := id
+	user, err := u.userUsecase.GetUserByEmail(email)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	if user == nil {
+		response := model.Response{
+			Message: "O usuário nao foi encontrado na base de dados",
+		}
+		ctx.JSON(http.StatusNotFound, response)
+		return
+	}
+
+	ctx.JSON(http.StatusOK, user)
+}
+
 func (u *UserController) DeleteUser(ctx *gin.Context) {
 	id := ctx.Param("userId")
 	if id == "" {
@@ -132,6 +162,56 @@ func (u *UserController) DeleteUser(ctx *gin.Context) {
 
 	response := model.Response{
 		Message: "Usuário deletado com sucesso",
+	}
+	ctx.JSON(http.StatusOK, response)
+}
+
+func (u *UserController) UpdateUser(ctx *gin.Context) {
+	id := ctx.Param("userId")
+	if id == "" {
+		response := model.Response{
+			Message: "ID do usuário não pode ser nulo",
+		}
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	userId, err := strconv.Atoi(id)
+	if err != nil {
+		response := model.Response{
+			Message: "ID do usuário precisa ser um número",
+		}
+		ctx.JSON(http.StatusBadRequest, response)
+		return
+	}
+
+	var user model.User
+	err = ctx.BindJSON(&user)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, err)
+		return
+	}
+
+	user.ID = userId
+	err = u.userUsecase.UpdateUser(userId)
+	if err != nil {
+		// Verifica se é erro de usuário não encontrado
+		if strings.Contains(err.Error(), "não encontrado") {
+			response := model.Response{
+				Message: err.Error(),
+			}
+			ctx.JSON(http.StatusNotFound, response)
+			return
+		}
+		response := model.Response{
+			Message: "Erro ao atualizar usuário: " + err.Error(),
+		}
+		ctx.JSON(http.StatusInternalServerError, response)
+		return
+	}
+
+	response := model.Response{
+		Message: "Usuário alterado com sucesso",
 	}
 	ctx.JSON(http.StatusOK, response)
 }

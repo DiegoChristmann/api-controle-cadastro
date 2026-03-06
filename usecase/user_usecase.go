@@ -41,6 +41,16 @@ func (pu *UserUsecase) GetUserById(id_user int) (*model.User, error) {
 	return user, nil
 }
 
+func (pu *UserUsecase) GetUserByEmail(email string) (*model.User, error) {
+
+	user, err := pu.repository.GetUserByEmail(email)
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
+
 func (pu *UserUsecase) DeleteUser(id_user int) error {
 	return pu.repository.DeleteUser(id_user)
 }
