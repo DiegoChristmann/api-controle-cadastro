@@ -55,6 +55,6 @@ func (pu *UserUsecase) DeleteUser(id_user int) error {
 	return pu.repository.DeleteUser(id_user)
 }
 
-func (pu *UserUsecase) UpdateUser(id_user int) error {
-	return pu.repository.UpdateUser(id_user)
+func (pu *UserUsecase) UpdateUser(user model.User) error {
+	return pu.repository.UpdateUser(user)
 }

@@ -18,7 +18,7 @@ type UserRepository interface { // Keep this as the interface
 	GetUserById(id_user int) (*model.User, error)
 	GetUserByEmail(email string) (*model.User, error)
 	DeleteUser(id_user int) error
-	UpdateUser(id_user int) error
+	UpdateUser(user model.User) error
 }
 
 // ...existing code...
@@ -87,7 +87,7 @@ func (pr *userRepository) GetUserById(id_user int) (*model.User, error) {
 func (pr *userRepository) GetUserByEmail(email string) (*model.User, error) {
 	var user model.User
 	err := pr.connection.QueryRow(
-		"SELECT id, user_name, email FROM \"user\" WHERE email = '$1'",
+		"SELECT id, user_name, email FROM \"user\" WHERE email = $1",
 		email,
 	).Scan(&user.ID, &user.Name, &user.Email)
 
@@ -119,8 +119,36 @@ func (pr *userRepository) DeleteUser(id_user int) error {
 	return nil
 }
 
-func (pr *userRepository) UpdateUser(id_user int) error {
-	result, err := pr.connection.Exec("UPDATE \"user\" SET user_name = $1, email = $2 WHERE id = $3", id_user)
+func (pr *userRepository) UpdateUser(user model.User) error {
+	// Monta query dinâmica apenas com os campos enviados
+	query := "UPDATE \"user\" SET "
+	args := []interface{}{}
+	argPos := 1
+
+	if user.Name != "" {
+		query += fmt.Sprintf("user_name = $%d", argPos)
+		args = append(args, user.Name)
+		argPos++
+	}
+
+	if user.Email != "" {
+		if len(args) > 0 {
+			query += ", "
+		}
+		query += fmt.Sprintf("email = $%d", argPos)
+		args = append(args, user.Email)
+		argPos++
+	}
+
+	// Se nenhum campo foi enviado, não há o que atualizar
+	if len(args) == 0 {
+		return fmt.Errorf("nenhum campo para atualizar")
+	}
+
+	query += fmt.Sprintf(" WHERE id = $%d", argPos)
+	args = append(args, user.ID)
+
+	result, err := pr.connection.Exec(query, args...)
 	if err != nil {
 		return fmt.Errorf("erro ao atualizar usuário: %w", err)
 	}
@@ -131,7 +159,7 @@ func (pr *userRepository) UpdateUser(id_user int) error {
 	}
 
 	if rowsAffected == 0 {
-		return fmt.Errorf("usuário com ID %d não encontrado", id_user)
+		return fmt.Errorf("usuário com ID %d não encontrado", user.ID)
 	}
 
 	return nil

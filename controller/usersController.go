@@ -96,17 +96,15 @@ func (u *UserController) GetUserById(ctx *gin.Context) {
 
 func (u *UserController) GetUserByEmail(ctx *gin.Context) {
 
-	id := ctx.Param("userEmail")
-	if id == "" {
+	email := ctx.Param("email")
+	if email == "" {
 		response := model.Response{
-			Message: "Email do usuário nao pode ser nula",
+			Message: "Email do usuário nao pode ser nulo",
 		}
 		ctx.JSON(http.StatusBadRequest, response)
 		return
 	}
 
-	// Como estamos buscando pelo email, não precisamos converter para inteiro
-	email := id
 	user, err := u.userUsecase.GetUserByEmail(email)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, err)
@@ -193,7 +191,7 @@ func (u *UserController) UpdateUser(ctx *gin.Context) {
 	}
 
 	user.ID = userId
-	err = u.userUsecase.UpdateUser(userId)
+	err = u.userUsecase.UpdateUser(user)
 	if err != nil {
 		// Verifica se é erro de usuário não encontrado
 		if strings.Contains(err.Error(), "não encontrado") {
