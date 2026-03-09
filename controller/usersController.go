@@ -62,7 +62,7 @@ func (u *UserController) GetUserById(ctx *gin.Context) {
 	id := ctx.Param("userId")
 	if id == "" {
 		response := model.Response{
-			Message: "ID do usuário nao pode ser nula",
+			Message: "ID do usuário não pode ser nulo",
 		}
 		ctx.JSON(http.StatusBadRequest, response)
 		return
@@ -212,4 +212,11 @@ func (u *UserController) UpdateUser(ctx *gin.Context) {
 		Message: "Usuário alterado com sucesso",
 	}
 	ctx.JSON(http.StatusOK, response)
+}
+
+func (u *UserController) MissingUserId(ctx *gin.Context) {
+	response := model.Response{
+		Message: "ID do usuário não pode ser nulo",
+	}
+	ctx.JSON(http.StatusBadRequest, response)
 }
