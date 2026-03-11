@@ -1,7 +1,7 @@
 package model
 
 type User struct {
-	ID    int    `json:"id_user" db:"id"`
-	Name  string `json:"name" db:"user_name"`
-	Email string `json:"email" db:"email"`
+	ID    int    `json:"id_user" db:"id" binding:"required"`
+	Name  string `json:"name" db:"user_name" binding:"required"`
+	Email string `json:"email" db:"email" binding:"required"`
 }

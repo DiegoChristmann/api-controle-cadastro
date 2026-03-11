@@ -6,13 +6,11 @@ import (
 	"fmt"
 )
 
-type userRepository struct { // Renamed from UserRepository to avoid conflict with the interface
+type userRepository struct {
 	connection *sql.DB
 }
 
-// ...existing code...
-
-type UserRepository interface { // Keep this as the interface
+type UserRepository interface {
 	GetUsers() ([]model.User, error)
 	CreateUser(user model.User) (int, error)
 	GetUserById(id_user int) (*model.User, error)
@@ -21,10 +19,8 @@ type UserRepository interface { // Keep this as the interface
 	UpdateUser(user model.User) error
 }
 
-// ...existing code...
-
-func NewUserRepository(connection *sql.DB) UserRepository { // Now returns the interface type
-	return &userRepository{ // Return a pointer to the struct, which implements the interface
+func NewUserRepository(connection *sql.DB) UserRepository {
+	return &userRepository{
 		connection: connection,
 	}
 }
@@ -32,7 +28,7 @@ func NewUserRepository(connection *sql.DB) UserRepository { // Now returns the i
 func (pr *userRepository) GetUsers() ([]model.User, error) {
 	rows, err := pr.connection.Query("SELECT id, user_name, email FROM \"user\" ORDER BY id")
 	if err != nil {
-		return nil, fmt.Errorf("erro ao buscar usuários: %w", err)
+		return nil, fmt.Errorf("Erro ao buscar usuários: %w", err)
 	}
 	defer rows.Close()
 
@@ -41,13 +37,13 @@ func (pr *userRepository) GetUsers() ([]model.User, error) {
 		var user model.User
 		err := rows.Scan(&user.ID, &user.Name, &user.Email)
 		if err != nil {
-			return nil, fmt.Errorf("erro ao escanear usuário: %w", err)
+			return nil, fmt.Errorf("Erro ao escanear usuário: %w", err)
 		}
 		userList = append(userList, user)
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("erro ao iterar sobre usuários: %w", err)
+		return nil, fmt.Errorf("Erro ao iterar sobre usuários: %w", err)
 	}
 
 	return userList, nil
@@ -61,7 +57,7 @@ func (pr *userRepository) CreateUser(user model.User) (int, error) {
 	).Scan(&id)
 
 	if err != nil {
-		return 0, fmt.Errorf("erro ao criar usuário: %w", err)
+		return 0, fmt.Errorf("Erro ao criar usuário: %w", err)
 	}
 
 	return id, nil
@@ -78,7 +74,7 @@ func (pr *userRepository) GetUserById(id_user int) (*model.User, error) {
 		return nil, nil
 	}
 	if err != nil {
-		return nil, fmt.Errorf("erro ao buscar usuário: %w", err)
+		return nil, fmt.Errorf("Erro ao buscar usuário: %w", err)
 	}
 
 	return &user, nil
@@ -95,7 +91,7 @@ func (pr *userRepository) GetUserByEmail(email string) (*model.User, error) {
 		return nil, nil
 	}
 	if err != nil {
-		return nil, fmt.Errorf("erro ao buscar usuário: %w", err)
+		return nil, fmt.Errorf("Erro ao buscar usuário: %w", err)
 	}
 
 	return &user, nil
@@ -104,16 +100,16 @@ func (pr *userRepository) GetUserByEmail(email string) (*model.User, error) {
 func (pr *userRepository) DeleteUser(id_user int) error {
 	result, err := pr.connection.Exec("DELETE FROM \"user\" WHERE id = $1", id_user)
 	if err != nil {
-		return fmt.Errorf("erro ao deletar usuário: %w", err)
+		return fmt.Errorf("Erro ao deletar usuário: %w", err)
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		return fmt.Errorf("erro ao verificar linhas afetadas: %w", err)
+		return fmt.Errorf("Erro ao verificar linhas afetadas: %w", err)
 	}
 
 	if rowsAffected == 0 {
-		return fmt.Errorf("usuário com ID %d não encontrado", id_user)
+		return fmt.Errorf("Erro: usuário com ID %d não encontrado", id_user)
 	}
 
 	return nil
@@ -142,7 +138,7 @@ func (pr *userRepository) UpdateUser(user model.User) error {
 
 	// Se nenhum campo foi enviado, não há o que atualizar
 	if len(args) == 0 {
-		return fmt.Errorf("nenhum campo para atualizar")
+		return fmt.Errorf("Erro: Nenhum campo para atualizar")
 	}
 
 	query += fmt.Sprintf(" WHERE id = $%d", argPos)
@@ -150,16 +146,16 @@ func (pr *userRepository) UpdateUser(user model.User) error {
 
 	result, err := pr.connection.Exec(query, args...)
 	if err != nil {
-		return fmt.Errorf("erro ao atualizar usuário: %w", err)
+		return fmt.Errorf("Erro ao atualizar usuário: %w", err)
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		return fmt.Errorf("erro ao verificar linhas afetadas: %w", err)
+		return fmt.Errorf("Erro ao verificar linhas afetadas: %w", err)
 	}
 
 	if rowsAffected == 0 {
-		return fmt.Errorf("usuário com ID %d não encontrado", user.ID)
+		return fmt.Errorf("Erro: usuário com ID %d não encontrado", user.ID)
 	}
 
 	return nil

@@ -144,7 +144,7 @@ func (u *UserController) DeleteUser(ctx *gin.Context) {
 	err = u.userUsecase.DeleteUser(userId)
 	if err != nil {
 		// Verifica se é erro de usuário não encontrado
-		if strings.Contains(err.Error(), "não encontrado") {
+		if strings.Contains(err.Error(), "Não encontrado") {
 			response := model.Response{
 				Message: err.Error(),
 			}
@@ -194,7 +194,7 @@ func (u *UserController) UpdateUser(ctx *gin.Context) {
 	err = u.userUsecase.UpdateUser(user)
 	if err != nil {
 		// Verifica se é erro de usuário não encontrado
-		if strings.Contains(err.Error(), "não encontrado") {
+		if strings.Contains(err.Error(), "Não encontrado") {
 			response := model.Response{
 				Message: err.Error(),
 			}
